@@ -1,0 +1,1 @@
+To create an executable from the source files simply run "setup.py <name of source.py>"
