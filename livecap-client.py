@@ -1,18 +1,10 @@
 """Developed by Francis Mensah, BYU, Provo and Kellie Kercher, BYU, Provo. Email: fn.mensah$byu.edu """
 
 import subprocess, sys, os, getopt, atexit
-from livecap import *
-
-def exit_handler():
-	"""exit_handler - code to do some cleaning up when program exits. Takes rpath (remote_path) and lc.storage_mode as 
-	arguments. If the path exists and the mode is remote_drive it attempts to unmount it"""
-	if os.path.exists(lc.remote_path) and lc.storage_mode == "remote_drive":
-		os.system("net use " + lc.remote_path[:-1] + " /delete /yes")
+from livecap import * # livecap is a module that contains functions and classes for the correct operation of the application
 
 try:
 
-	atexit.register(exit_handler)
-	
 	date = sanitize_date(subprocess.check_output("date /t",shell=True)[:-2])	
 	
 	#create a Livecap instance
@@ -55,12 +47,12 @@ try:
 		elif opt == "-f":
 			get_tool = True
 				
-	if options == []:
+	if options == []: #start in interactive mode if no arguments or options are provided
 		print "Starting in interactive mode..."
 		interactive_mode = "config"
 		auto = False		
 				
-	if get_tool == True:
+	if get_tool == True: #copy tools from system folder to tools folder
 		print "Copying tools, please wait..."
 		returnstatus = get_tools(lc)
 		if returnstatus > 0:
@@ -70,7 +62,7 @@ try:
 			print "There was an error"
 			sys.exit(1)
 	
-	if auto == True:
+	if auto == True: #run in automatic mode
 		print "Starting in automatic mode..."
 		
 		if lc.read_config() == 1: 
@@ -84,16 +76,8 @@ try:
 			if lc.remote_path == "" and lc.attached_path == "":
 				print "\nERROR: Remote drive path or attached storage path not provided in config file"
 				sys.exit(1)
-				
-			if lc.storage_mode == "remote_drive":
-				if lc.remote_drive_init() == 1:
-					sys.exit(1)
-				
-			elif lc.storage_mode == "attached_storage": 
-				if lc.attached_storage_init() == 1:
-					sys.exit(1)
-									
-			if lc.create_working_dir() == 1:
+															
+			if lc.create_storage_dir() == 1:
 				sys.exit(1)
 				
 			commands = lc.read_commands()
@@ -179,7 +163,7 @@ try:
 				elif keybd == "cls":
 					os.system("cls")
 					continue
-				else:
+				else:					
 					if lc.storage_mode == "remote_drive" or lc.storage_mode == "attached_storage":
 						if lc.storage_mode == "remote_drive":		
 							print "\nData will be stored on remote drive"
@@ -188,44 +172,22 @@ try:
 						if lc.remote_path == "" and lc.remote_path == "":
 							print "\nERROR: Remote drive path or attached storage path not provided\n"
 							continue
-							
-						if lc.storage_mode == "remote_drive":
-							if lc.prompt:
-								r_init = lc.remote_drive_init()
-								if r_init == -1:
-									pass
-								elif r_init == 0:
-									prompt_again = raw_input("Do you want to prompted again? (y/n) ")
-									if prompt_again == "y":
-										pass
-									else: 
-										prompt = False									
-								else:
-									continue
-							else:
-								if lc.remote_drive_init(False)	== 1:
-									continue
-							
-						elif lc.storage_mode == "attached_storage": 
-							if lc.attached_storage_init() == 1:
-								continue
-												
-						if lc.create_working_directory() == 1:
+											
+						if lc.create_storage_directory() == 1:
 							continue						
-									
+												
 						if keybd == "run auto":
 							commands = lc.read_commands()						
 						else:					
 							commands = [keybd]
-			
+									
 						if commands == 1: 
 							continue
 						
 						print "\n"
 						
 						if lc.run_command_list(commands)==1:
-							continue
-						
+							continue						
 						
 					elif lc.storage_mode == "remote_server":
 						print "\nData transfer via remote_server connection selected\n"

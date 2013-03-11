@@ -39,8 +39,8 @@ def fmd5sum(filePath):
 	
 def save(filename,data,path,command):
 	"""Saves data to remote drive or attached storage"""
-	try:
-		outputfile = open(path + filename,"w")				
+	try:		
+		outputfile = open(os.path.join(path,filename),"w")				
 		print ("Saving: " + command).ljust(50),
 		outputfile.write(data)			
 		outputfile.close()
@@ -158,6 +158,7 @@ class Livecap():
 		self.remote_port = ""
 		self.remote_path = ""
 		self.attached_path = ""
+		self.storage_path = ""
 		self.drive_letter = ""
 		self.auto = False
 		self.interactive_mode = ""
@@ -207,18 +208,18 @@ class Livecap():
 		#draw_line()
 		print "\nCurrent Configuration\n"
 		#draw_line()
-		print "Config_file: " + self.config_file
-		print "Commands_file: " + self.commands_file
-		print "Storage_mode: " + self.storage_mode
-		print "Remote_host: " + self.remote_host
-		print "Remote_port: " + self.remote_port
-		print "Remote_path: " + self.remote_path
-		print "Attached_path: " + self.attached_path
-		print "Tools_path: " + self.tools_path
-		print "Auto_mode: " + str(self.auto)
-		print "Show_output: " + self.show_output
-		print "Hostname: " + self.computername
-		print "Date: " + self.date
+		print "Config_file ".ljust(20) +  ":\t" + self.config_file
+		print "Commands_file ".ljust(20) +  ":\t" + self.commands_file
+		print "Storage_mode ".ljust(20) +  ":\t" + self.storage_mode
+		print "Remote_host ".ljust(20) +  ":\t" + self.remote_host
+		print "Remote_port ".ljust(20) +  ":\t" + self.remote_port
+		print "Remote_path ".ljust(20) +  ":\t" + self.remote_path
+		print "Attached_path ".ljust(20) +  ":\t" + self.attached_path
+		print "Tools_path ".ljust(20) +  ":\t" + self.tools_path
+		print "Auto_mode ".ljust(20) +  ":\t" + str(self.auto)
+		print "Show_output ".ljust(20) +  ":\t" + self.show_output
+		print "Hostname ".ljust(20) +  ":\t" + self.computername
+		print "Date ".ljust(20) +  ":\t" + self.date
 		print ""
 		
 	def set_config(self,param, value):
@@ -265,61 +266,27 @@ class Livecap():
 		except Exception as ex:
 			print "ERROR (Could not read the commands file): ",ex
 			return 1
-			
-	def remote_drive_init(self,prompt_existing=True):
-		"""Mounts remote drive. Return values: -1: Drive was mounted successfully, 0: Existing drive will be used
-		1: There was an error"""
-		try:					
-			self.remote_path = sanitize_path(self.remote_path)
-			remote_path = self.remote_path.split(":")
-			self.drive_letter = remote_path[0]		
-			if not os.path.exists(self.drive_letter+":\\"):
-				drive_path = "\\" + remote_path[1]
-				cmd_out = subprocess.call("net use " + self.drive_letter + ": " + drive_path, shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
-				if cmd_out == 0:
-					self.remote_path = self.drive_letter + ":\\"
-					print "Remote drive was successfully mounted"
-					return -1
-				else:
-					print "Remote drive could not be mounted"
-					return 1										
-			else:
-				if prompt_existing: 
-					use_existing = raw_input("The drive letter you specified is already mounted. Do you want to go ahead and use it? (y/n): ")
-				else:
-					use_existing = "y"
-				if use_existing=="y": 
-					remote_path = sanitize_path(self.remote_path)
-					remote_path = self.remote_path.split(":")
-					self.drive_letter = remote_path[0]
-					self.remote_path = self.drive_letter + ":\\"
-					return 0
-				else: 
-					return 1
-		except Exception as ex:
-			print "ERROR (Could not mount remote drive): ",ex
-			return 1
-			
-	def attached_storage_init(self):
-		"""Set attached storage drive"""
-		self.remote_path = sanitize_path(self.attached_path) + "\\"
-		return 0
 		
-	def create_working_directory(self):
-		"""Create working directory for the storage of output files"""
+	def create_storage_directory(self):
+		"""Create storage directory for the storage of command output files"""
 		try:
-			remote_dir = self.computername + "_" + self.date
-			if not (os.path.exists(self.remote_path + remote_dir)): 
-				os.mkdir(self.remote_path + remote_dir)
+			storage_dir = []
+			if self.storage_mode == "remote_drive":
+				storage_dir = os.path.join(self.remote_path,self.computername + "_" + self.date)
+			elif self.storage_mode == "attached_storage":
+				storage_dir = os.path.join(self.attached_path,self.computername + "_" + self.date)
+			if not (os.path.exists(storage_dir)): 
+				os.makedirs(storage_dir)
+			self.storage_path = storage_dir #update storage path to full directory path
 			return 0
 		except Exception as ex:
-			print "\nERROR (Working directory could not be created): ", ex
+			print "\nERROR (Storage directory could not be created): ", ex
 			return 1
 			
 	def run_command_list(self,commands):
 		"""Run list of commands. Returns 0 if completed successfully or 1 if with errors"""
 		date = sanitize_date(subprocess.check_output("date /t",shell=True)[:-2])
-		if self.storage_mode == "remote_storage" or self.storage_mode == "attached_storage":
+		if self.storage_mode == "remote_drive" or self.storage_mode == "attached_storage":
 			try:
 				for c in commands:			
 					command = c.strip()						
@@ -338,8 +305,8 @@ class Livecap():
 						print "...... Success"
 					else:
 						print "...... Command returned with errors"
-					filename = self.computername+"_"+date+"\\"+commandname+"_"+time+".txt"			
-					save(filename,command_output,self.remote_path,command)
+					filename = commandname+"_"+time+".txt"			
+					save(filename,command_output,self.storage_path,command)
 				print "\nDone"
 				return 0
 			except Exception as ex:
