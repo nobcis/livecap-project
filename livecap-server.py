@@ -11,8 +11,7 @@ class LivecapServerProtocol(protocol.Protocol):
 	def connectionLost(self, reason):
 		pass		
 		
-	def dataReceived(self, data):
-	
+	def dataReceived(self, data):	
 		try:
 			try:
 				command_output = data.split('data:')
@@ -33,7 +32,7 @@ class LivecapServerProtocol(protocol.Protocol):
 				for line in config_file:
 					entry=line.split('=')
 					config.append(entry[1].strip())
-				directory = config[0] + dir
+				directory = os.path.join(config[0], dir)
 			except Exception as ex:
 				print "Server error: data received may be of invalid format.", ex
 			if not os.path.exists(directory): #Check if directory already exisits

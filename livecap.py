@@ -317,8 +317,7 @@ class Livecap():
 			try:
 				data = ""			
 				for c in commands:
-					command = c.strip()
-					print command
+					command = c.strip()					
 					commandname = command.split(" ")[0]
 					commandargs = command.split(" ")[1:]
 					toolchksum = ""
