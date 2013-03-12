@@ -96,7 +96,7 @@ class LivecapServerProtocol(protocol.Protocol):
 			report_inside=""
 			for command in data_commands: #output the results in the html report formatted
 				side_report = open(directory+'/'+data_filenames[count]+'.txt','w')
-				side_report.write("command:"+data_data[count])
+				side_report.write(data_data[count])
 				side_report.close()				
 				
 				if data_checksums[count] == chksum:					

@@ -77,7 +77,7 @@ try:
 				print "\nERROR: Remote drive path or attached storage path not provided in config file"
 				sys.exit(1)
 															
-			if lc.create_storage_dir() == 1:
+			if lc.create_storage_directory() == 1:
 				sys.exit(1)
 				
 			commands = lc.read_commands()
@@ -85,7 +85,7 @@ try:
 			if commands == 1: 
 				sys.exit(1)
 				
-			if lc.run_command_list(commands)==1:
+			if lc.run_command_list(commands) == 1:
 				sys.exit(1)
 				
 		elif lc.storage_mode == "remote_server":
