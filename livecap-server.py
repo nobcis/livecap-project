@@ -14,25 +14,27 @@ class LivecapServerProtocol(protocol.Protocol):
 	def dataReceived(self, data):	
 		try:
 			try:
+				# compute md5 sum of data received
 				command_output = data.split('data:')
 				command_output = command_output[1]
 				chksum = md5sum(command_output).strip()
 				
-				data = data.replace("\r\n","\n")
+				data = data.replace("\r\n","\n") # this is necessary to produce a clean output
 				
-				self.transport.write("OK")
-				self.transport.loseConnection()
+				self.transport.write("OK") # send a reply to client that data has been received
+				self.transport.loseConnection() # close connection to client
 				
 				#Report Creation
 				dir = data.split('directory:') #Get the directory name from input data
 				dir = dir[1].split('\nfilename')
 				dir = dir[0]
 				config_file=open('serverconfig.txt','r').readlines() #Get the directory location from Server_Config.txt file to store results
-				config = []
-				for line in config_file:
-					entry=line.split('=')
-					config.append(entry[1].strip())
-				directory = os.path.join(config[0], dir)
+				directory = ""
+				for conf in config_file:
+					param=conf.split('=')
+					if param[0] == "directory":
+						directory = os.path.join(param[1].strip(),dir)
+					
 			except Exception as ex:
 				print "Server error: data received may be of invalid format.", ex
 			if not os.path.exists(directory): #Check if directory already exisits

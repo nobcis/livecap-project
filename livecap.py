@@ -94,6 +94,8 @@ def get_tools(lc):
 		count = 0
 		for tool in toolslist:
 			try:				
+				if tool == "" or tool.startswith("#"): # ignore comments and blank lines
+					continue
 				tool = tool[:-1]				
 				if tool != "":
 					copy_file("C:\\Windows\\System32\\",lc.tools_path,tool)
@@ -150,6 +152,46 @@ def send(data, lc, command):
 	except Exception as ex:
 		return ex
 		
+def show_help(mode="auto"):
+	if mode == "auto":
+		print "LIVECAP v1.0  Framework for forensic live capture" 
+		print "Copyright(c) 2013"		
+		print "\nUsage: livecap-client [-A] [-c filename] [-e directory_path] [-f] \n [-h hostname|IP address] [-k filename]  [-p port] [-r directory_path] "\
+				+ "\n [-t directory_path] [--help]" 
+		print "\n\t-A\tRuns the livecap client in automatic mode"
+		print "\t-c\tLivecap client configuration file to use"
+		print "\t-e\tDirectory path for attached external storage device"
+		print "\t-f\tCopy operating system tools from a trusted computer"
+		print "\t-h\tHostname or IP address of workstation running livecap-server"
+		print "\t-k\tCommands file to use. This file should contain a list "
+		print "\t  \tof commands to be executed in automatic mode"
+		print "\t-p\tPort number on which livecap-server is listening"
+		print "\t-r\tDirectory path for remote network storage"
+		print "\t--help\tDisplay help"
+	elif mode == "config":
+		print "\n  Available commands:\n"
+		print "\tshow config".ljust(25) + "display current configuration settings"
+		print "\tread config".ljust(25) + "read configuration settings from" 
+		print "\t".ljust(25) + "configuration file"
+		print "\tset parameter=value".ljust(25) + "set parameter setting with name 'parameter'" 
+		print "\t".ljust(25) + "to 'value'"
+		print "\tset run".ljust(25) + "switch to run mode"
+		print "\tget tools".ljust(25) + "copy operating system tools to tools folder"
+		print "\tcls".ljust(25) + "clear screen"
+		print "\thelp".ljust(25) + "display help"
+		print "\t?".ljust(25) + "display help"
+		print "\texit".ljust(25) + "close the program"
+	elif mode == "run":
+		print "\n  Available commands:\n"		
+		print "\tset config".ljust(25) + "switch to config mode"
+		print "\trun auto".ljust(25) + "execute all commands in the commands file"
+		print "\t<command>".ljust(25) + "execute <command>. The command must have a"
+		print "\t".ljust(25) + "corresponding executable in the tools folder"
+		print "\tcls".ljust(25) + "clear screen"
+		print "\thelp".ljust(25) + "display help"
+		print "\t?".ljust(25) + "display help"
+		print "\texit".ljust(25) + "close the program"
+		
 class Livecap():
 	def __init__(self):
 		#initialize class fields
@@ -182,7 +224,7 @@ class Livecap():
 			print "\nFILE ERROR (Configuration file not found): ", ex
 			return 1
 			
-		print "\nReading configuration file ..."
+		print "\nReading configuration file..."
 		
 		for p in params:
 			param = p.split("=")[0].strip()
@@ -206,20 +248,20 @@ class Livecap():
 	def show_config(self):
 		"""Displays current configuration on screen"""
 		#draw_line()
-		print "\nCurrent Configuration\n"
+		print "\n Current Configuration\n"
 		#draw_line()
-		print "Config_file ".ljust(20) +  ":\t" + self.config_file
-		print "Commands_file ".ljust(20) +  ":\t" + self.commands_file
-		print "Storage_mode ".ljust(20) +  ":\t" + self.storage_mode
-		print "Remote_host ".ljust(20) +  ":\t" + self.remote_host
-		print "Remote_port ".ljust(20) +  ":\t" + self.remote_port
-		print "Remote_path ".ljust(20) +  ":\t" + self.remote_path
-		print "Attached_path ".ljust(20) +  ":\t" + self.attached_path
-		print "Tools_path ".ljust(20) +  ":\t" + self.tools_path
-		print "Auto_mode ".ljust(20) +  ":\t" + str(self.auto)
-		print "Show_output ".ljust(20) +  ":\t" + self.show_output
-		print "Hostname ".ljust(20) +  ":\t" + self.computername
-		print "Date ".ljust(20) +  ":\t" + self.date
+		print "\tConfig_file ".ljust(20) +  ":\t" + self.config_file
+		print "\tCommands_file ".ljust(20) +  ":\t" + self.commands_file
+		print "\tStorage_mode ".ljust(20) +  ":\t" + self.storage_mode
+		print "\tRemote_host ".ljust(20) +  ":\t" + self.remote_host
+		print "\tRemote_port ".ljust(20) +  ":\t" + self.remote_port
+		print "\tRemote_path ".ljust(20) +  ":\t" + self.remote_path
+		print "\tAttached_path ".ljust(20) +  ":\t" + self.attached_path
+		print "\tTools_path ".ljust(20) +  ":\t" + self.tools_path
+		print "\tAuto_mode ".ljust(20) +  ":\t" + str(self.auto)
+		print "\tShow_output ".ljust(20) +  ":\t" + self.show_output
+		print "\tHostname ".ljust(20) +  ":\t" + self.computername
+		print "\tDate ".ljust(20) +  ":\t" + self.date
 		print ""
 		
 	def set_config(self,param, value):
@@ -255,7 +297,11 @@ class Livecap():
 			commandslist = []
 			
 			for command in commands:
-				commandname = command.split(" ")[0].strip()
+				if command == "": # ignore all blank lines
+					continue
+				commandname = command.split(" ")[0].strip()				
+				if commandname.startswith("#"): # ignore all commented lines					
+					continue
 				if is_internal_cmd(commandname):					
 					commandslist.append(command.strip())					
 				elif os.path.exists(self.tools_path+"\\"+commandname):
@@ -292,12 +338,18 @@ class Livecap():
 					command = c.strip()						
 					commandname = command.split(" ")[0]
 					commandargs = command.split(" ")[1:]
+					tools_list = os.listdir(self.tools_path)
 					if is_internal_cmd (commandname):
 						toolchksum = "Windows Internal Command"
 					else:
-						command = os.path.join(self.tools_path,commandname)
-						command = "\"" + command + "\" " + " ".join(commandargs).strip()
-						toolchksum = fmd5sum(os.path.join(self.tools_path,commandname))
+						for tool in tools_list:
+							if tool.startswith(commandname):
+								command = os.path.join(self.tools_path,tool)
+								command = "\"" + command + "\" " + " ".join(commandargs).strip()
+								toolchksum = fmd5sum(os.path.join(self.tools_path,tool))
+								break
+							else:
+								continue
 					time = time_signature()
 					command_output,error = run_command(command)
 					print ("Executing: " + command).ljust(50),
@@ -315,18 +367,26 @@ class Livecap():
 				
 		elif self.storage_mode == "remote_server":
 			try:
-				data = ""			
+				data = ""				
 				for c in commands:
+					#if c == "": # ignore blank commands
+					#	continue
 					command = c.strip()					
 					commandname = command.split(" ")[0]
 					commandargs = command.split(" ")[1:]
 					toolchksum = ""
+					tools_list = os.listdir(self.tools_path)
 					if is_internal_cmd (commandname):
 						toolchksum = "Windows Internal Command"
 					else:
-						command = os.path.join(self.tools_path,commandname)
-						command = "\"" + command + "\" " + " ".join(commandargs).strip()
-						toolchksum = fmd5sum(os.path.join(self.tools_path,commandname))
+						for tool in tools_list:
+							if tool.startswith(commandname):
+								command = os.path.join(self.tools_path,tool)
+								command = "\"" + command + "\" " + " ".join(commandargs).strip()
+								toolchksum = fmd5sum(os.path.join(self.tools_path,tool))								
+								break
+							else:
+								continue
 					time = time_signature()					
 					data = build_data("command",data,command)	#add preamble field						
 					data = build_data("directory",data,self.computername+"_"+date)	#add directory name field						
